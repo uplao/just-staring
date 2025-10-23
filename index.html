@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>Just Staring</title>
+    <style>
+        /* 防止iOS Safari视口变化导致的闪烁 */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        body {
+            font-family: -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            height: 100dvh;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+            box-sizing: border-box;
+        }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 0;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-blue { background: linear-gradient(45deg, #4facfe, #00f2fe); color: white; }
+        .btn-green { background: linear-gradient(45deg, #43e97b, #38f9d7); color: white; }
+        .btn-orange { background: linear-gradient(45deg, #fa709a, #fee140); color: white; }
+        .btn-gray { background: linear-gradient(45deg, #a8edea, #fed6e3); color: #333; }
+        .btn-red { background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; }
+        
+        .game-area {
+            display: none;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        
+        .controls .btn {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .table-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            overflow: auto;
+            max-height: 60vh;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 400px;
+        }
+        
+        .score-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+        
+        .name-row {
+            background: #e9ecef;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+        
+        .total-row {
+            background: #d4edda;
+            font-weight: bold;
+            border-bottom: 2px solid #28a745;
+            position: sticky;
+            top: 33px;
+            z-index: 4;
+        }
+        
+        .positive { color: #28a745; font-weight: bold; }
+        .negative { color: #dc3545; font-weight: bold; }
+        .winner { background: #d1ecf1; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal-box {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            -webkit-appearance: none;
+            box-sizing: border-box;
+        }
+        
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .score-item {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .score-item input {
+            width: 60px;
+            text-align: center;
+            font-weight: bold;
+            -webkit-appearance: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .score-item input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 5px rgba(79, 172, 254, 0.3);
+            outline: none;
+        }
+        
+        .score-item.current-input {
+            background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+            border: 2px solid #4facfe;
+            transform: scale(1.05);
+        }
+        
+        .input-hint {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .player-card {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .player-card button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-status-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .choice-buttons .btn {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .detail-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .detail-buttons .btn {
+            padding: 10px 15px;
+            font-size: 13px;
+        }
+
+        .temp-backup-area {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .custom-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            max-width: 90%;
+            width: 350px;
+            text-align: center;
+        }
+
+        .custom-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            max-width: 90%;
+            width: 350px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+        }
+
+        @media screen and (min-width: 768px) {
+            .app-container {
+                padding: 20px;
+            }
+            
+            .container {
+                max-height: calc(100vh - 40px);
+            }
+        }
+
+        @supports (-webkit-overflow-scrolling: touch) {
+            body {
+                position: fixed;
+                overflow: hidden;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="container">
+            <div class="header" id="mainHeader">
+                <h1>🤔 Just Staring</h1>
+                <div id="gameStatus">欢迎使用 | 请选择功能</div>
+            </div>
+            
+            <div class="content">
+                <div id="mainMenu">
+                    <h3 style="text-align: center; margin-bottom: 20px;">选择功能</h3>
+                    <div class="menu-grid">
+                        <button class="btn btn-blue" onclick="startGame()">开始牌局</button>
+                        <button class="btn btn-orange" onclick="showPlayers()">玩家管理</button>
+                        <button class="btn btn-gray" onclick="showHistory()">历史记录</button>
+                        <button class="btn btn-green" onclick="showDataBackup()">数据备份</button>
+                    </div>
+                </div>
+                
+                <div id="gameArea" class="game-area">
+                    <div class="controls" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <div style="text-align: center; color: white; font-weight: bold; margin-bottom: 10px;" id="gameStatus2">牌局信息</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                            <button class="btn btn-green" onclick="addScore()">分值记录</button>
+                            <button class="btn btn-gray" onclick="checkReturnHome()">返回主页</button>
+                            <button class="btn btn-orange" onclick="endGame()">结束牌局</button>
+                            <button class="btn btn-gray" onclick="showPlayers()">玩家管理</button>
+                        </div>
+                    </div>
+                    
+                    <div id="familyArea" style="display: none;">
+                        <div class="table-container">
+                            <h4 style="text-align: center; margin-bottom: 10px;">家庭积分</h4>
+                            <table class="score-table" id="familyTable">
+                                <tbody id="familyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <h4 style="text-align: center; margin-bottom: 10px;">个人积分</h4>
+                        <table class="score-table" id="gameTable">
+                            <tbody id="gameBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分值记录弹窗 -->
+    <div id="scoreModal" class="modal">
+        <div class="modal-box">
+            <span class="close" onclick="closeModal('scoreModal')">&times;</span>
+            <h3 id="scoreModalTitle">记录分值</h3>
+            
+            <div style="background: #e8f5e8; padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;">
+                <div class="input-group">
+                    <label style="color: #28a745;">🏆 获胜者</label>
+                    <select id="winner" style="font-size: 16px; font-weight: bold;">
+                        <option value="">选择获胜者</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="scoreInputs" class="score-grid"></div>
+            
+            <div class="input-hint">
+                💡 输入完成后按回车键自动跳转下一位，或在最后一位直接保存
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-green" onclick="saveScore()">确认</button>
+                <button class="btn btn-gray" onclick="closeModal('scoreModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 玩家管理弹窗 -->
+    <div id="playerModal" class="modal">
+        <div class="modal-box">
+            <span class="close" onclick="closeModal('playerModal')">&times;</span>
+            <h3>玩家管理</h3>
+            
+            <div class="input-group">
+                <label>姓名:</label>
+                <input type="text" id="playerName" placeholder="输入姓名">
+            </div>
+            <div class="input-group">
+                <label>家庭:</label>
+                <input type="text" id="playerFamily" placeholder="家庭名称(可选)">
+            </div>
+            
+            <button class="btn btn-green" onclick="addPlayer()">添加</button>
+            
+            <h4 style="margin-top: 20px;">参与者列表:</h4>
+            <div id="playerList" class="player-grid"></div>
+        </div>
+    </div>
+
+    <!-- 历史记录弹窗 -->
+    <div id="historyModal" class="modal">
+        <div class="modal-box" style="max-width: 800px;">
+            <span class="close" onclick="closeModal('historyModal')">&times;</span>
+            <h3>历史记录</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- 确认删除弹窗 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-box" style="max-width: 350px;">
+            <h3 id="confirmModalTitle">确认删除</h3>
+            <p id="confirmMessage" style="white-space: pre-line;"></p>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-red" onclick="confirmAction()">确认</button>
+                <button class="btn btn-gray" onclick="closeModal('confirmModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 返回主页弹窗 -->
+    <div id="returnHomeModal" class="modal">
+        <div class="modal-box" style="max-width: 350px;">
+            <span class="close" onclick="closeModal('returnHomeModal')">&times;</span>
+            <h3>🎮 当前牌局处理</h3>
+            
+            <div class="game-status-card">
+                <div><strong>牌局名称：</strong><span id="currentGameName"></span></div>
+                <div><strong>副牌数：</strong><span id="currentRoundsCount"></span></div>
+            </div>
+            
+            <p style="text-align: center; color: #666; margin: 15px 0;">
+                检测到正在进行的牌局，请选择处理方式：
+            </p>
+            
+            <div class="choice-buttons">
+                <button class="btn btn-green" onclick="continueCurrentGame()">
+                    🎯 继续当前牌局
+                </button>
+                <button class="btn btn-blue" onclick="saveAndReturnHome()">
+                    💾 结束并保存牌局
+                </button>
+                <button class="btn btn-red" onclick="discardAndReturnHome()">
+                    🗑️ 放弃当前牌局
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据备份弹窗 -->
+    <div id="dataBackupModal" class="modal">
+        <div class="modal-box" style="max-width: 350px;">
+            <span class="close" onclick="closeModal('dataBackupModal')">&times;</span>
+            <h3>💾 数据备份</h3>
+            <p style="text-align: center; color: #999; font-size: 12px; margin: 5px 0;">年度数据管理</p>
+            
+            <p style="text-align: center; color: #666; margin: 15px 0;">
+                请选择备份操作：
+            </p>
+            
+            <div class="choice-buttons">
+                <button class="btn btn-green" onclick="exportYearlyData()">
+                    📤 导出数据
+                    <br><small style="opacity: 0.8;">按年度导出历史记录</small>
+                </button>
+                <button class="btn btn-orange" onclick="importYearlyData()">
+                    📥 导入数据
+                    <br><small style="opacity: 0.8;">从备份文件恢复数据</small>
+                </button>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
+                <strong>说明：</strong><br>
+                • 导出：按年度备份历史记录并清理空间<br>
+                • 导入：恢复年度备份文件中的游戏记录
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var players = JSON.parse(localStorage.getItem('players') || '[]');
+        var gameHistory = JSON.parse(localStorage.getItem('gameHistory') || '[]');
+        var currentGame = null;
+        var playerToDelete = null;
+        var gameToDelete = null;
+        var editingIndex = -1;
+        var currentInputIndex = 0;
+        var inputOrder = [];
+
+        // 防止iOS Safari视口变化的处理
+        function preventViewportBounce() {
+            document.addEventListener('touchmove', function(e) {
+                if (e.target.closest('.content') || e.target.closest('.modal-box')) {
+                    return;
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            function setViewportHeight() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            }
+
+            setViewportHeight();
+            
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(setViewportHeight, 150);
+            });
+        }
+
+        // 保存当前进行中的牌局到临时存储
+        function saveCurrentGameToTemp() {
+            if (currentGame && currentGame.rounds && currentGame.rounds.length > 0) {
+                localStorage.setItem('currentGameInProgress', JSON.stringify(currentGame));
+            }
+        }
+
+        // 从临时存储加载未完成的牌局
+        function loadCurrentGameFromTemp() {
+            var saved = localStorage.getItem('currentGameInProgress');
+            if (saved) {
+                try {
+                    var tempGame = JSON.parse(saved);
+                    if (tempGame && tempGame.rounds && tempGame.rounds.length > 0) {
+                        currentGame = tempGame;
+                        updateScoreTable();
+                        customAlert('已恢复上次未完成的牌局记录');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('currentGameInProgress');
+                }
+            }
+        }
+
+        // 自定义弹窗函数
+        function customAlert(message, callback) {
+            var existingAlert = document.querySelector('.custom-alert');
+            var existingOverlay = document.querySelector('.overlay');
+            if (existingAlert) existingAlert.remove();
+            if (existingOverlay) existingOverlay.remove();
+
+            var overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            var alertBox = document.createElement('div');
+            alertBox.className = 'custom-alert';
+            alertBox.innerHTML = 
+                '<div style="margin-bottom: 20px; line-height: 1.5;">' + message + '</div>' +
+                '<button class="btn btn-blue" onclick="closeCustomAlert()">确认</button>';
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(alertBox);
+            
+            window.customAlertCallback = callback;
+        }
+
+        function closeCustomAlert() {
+            var alertBox = document.querySelector('.custom-alert');
+            var overlay = document.querySelector('.overlay');
+            if (alertBox) alertBox.remove();
+            if (overlay) overlay.remove();
+            
+            if (window.customAlertCallback) {
+                window.customAlertCallback();
+                window.customAlertCallback = null;
+            }
+        }
+
+        function customConfirm(message, onConfirm, onCancel) {
+            var existingAlert = document.querySelector('.custom-alert');
+            var existingOverlay = document.querySelector('.overlay');
+            if (existingAlert) existingAlert.remove();
+            if (existingOverlay) existingOverlay.remove();
+
+            var overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            var confirmBox = document.createElement('div');
+            confirmBox.className = 'custom-alert';
+            confirmBox.innerHTML = 
+                '<div style="margin-bottom: 20px; line-height: 1.5;">' + message + '</div>' +
+                '<div style="display: flex; gap: 10px; justify-content: center;">' +
+                '<button class="btn btn-green" onclick="handleCustomConfirm(true)">确认</button>' +
+                '<button class="btn btn-gray" onclick="handleCustomConfirm(false)">取消</button>' +
+                '</div>';
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(confirmBox);
+            
+            window.customConfirmCallback = onConfirm;
+            window.customCancelCallback = onCancel;
+        }
+
+        function handleCustomConfirm(confirmed) {
+            var confirmBox = document.querySelector('.custom-alert');
+            var overlay = document.querySelector('.overlay');
+            if (confirmBox) confirmBox.remove();
+            if (overlay) overlay.remove();
+            
+            if (confirmed && window.customConfirmCallback) {
+                window.customConfirmCallback();
+            } else if (!confirmed && window.customCancelCallback) {
+                window.customCancelCallback();
+            }
+            
+            window.customConfirmCallback = null;
+            window.customCancelCallback = null;
+        }
+
+        function customPrompt(message, defaultValue, onConfirm, onCancel) {
+            var existingPrompt = document.querySelector('.custom-prompt');
+            var existingOverlay = document.querySelector('.overlay');
+            if (existingPrompt) existingPrompt.remove();
+            if (existingOverlay) existingOverlay.remove();
+
+            var overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            var promptBox = document.createElement('div');
+            promptBox.className = 'custom-prompt';
+            promptBox.innerHTML = 
+                '<div style="margin-bottom: 15px; line-height: 1.5;">' + message + '</div>' +
+                '<input type="text" id="customPromptInput" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px;" value="' + (defaultValue || '') + '">' +
+                '<div style="display: flex; gap: 10px; justify-content: center;">' +
+                '<button class="btn btn-green" onclick="handleCustomPrompt(true)">确认</button>' +
+                '<button class="btn btn-gray" onclick="handleCustomPrompt(false)">取消</button>' +
+                '</div>';
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(promptBox);
+            
+            setTimeout(function() {
+                document.getElementById('customPromptInput').focus();
+            }, 100);
+            
+            window.customPromptCallback = onConfirm;
+            window.customPromptCancelCallback = onCancel;
+        }
+
+        function handleCustomPrompt(confirmed) {
+            var input = document.getElementById('customPromptInput');
+            var value = input ? input.value : '';
+            
+            var promptBox = document.querySelector('.custom-prompt');
+            var overlay = document.querySelector('.overlay');
+            if (promptBox) promptBox.remove();
+            if (overlay) overlay.remove();
+            
+            if (confirmed && window.customPromptCallback) {
+                window.customPromptCallback(value);
+            } else if (!confirmed && window.customPromptCancelCallback) {
+                window.customPromptCancelCallback();
+            }
+            
+            window.customPromptCallback = null;
+            window.customPromptCancelCallback = null;
+        }
+
+        function goHome() {
+            document.getElementById('mainMenu').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('mainHeader').style.display = 'block';
+            document.getElementById('gameStatus').textContent = '欢迎使用 | 请选择功能';
+        }
+
+        function checkReturnHome() {
+            if (!currentGame) {
+                goHome();
+                return;
+            }
+
+            document.getElementById('currentGameName').textContent = currentGame.name;
+            document.getElementById('currentRoundsCount').textContent = currentGame.rounds.length;
+            document.getElementById('returnHomeModal').style.display = 'block';
+        }
+
+        function continueCurrentGame() {
+            closeModal('returnHomeModal');
+        }
+
+        function saveAndReturnHome() {
+            if (currentGame) {
+                gameHistory.push(JSON.parse(JSON.stringify(currentGame)));
+                localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                localStorage.removeItem('currentGameInProgress');
+                currentGame = null;
+                
+                customAlert('牌局已保存到历史记录！');
+            }
+            closeModal('returnHomeModal');
+            goHome();
+        }
+
+        function discardAndReturnHome() {
+            customConfirm('确定要放弃当前牌局吗？所有数据将丢失！', function() {
+                localStorage.removeItem('currentGameInProgress');
+                currentGame = null;
+                closeModal('returnHomeModal');
+                goHome();
+            });
+        }
+
+        function startGame() {
+            if (players.length < 2) {
+                customAlert('至少需要2个玩家！', function() {
+                    showPlayers();
+                });
+                return;
+            }
+
+            localStorage.removeItem('currentGameInProgress');
+            
+            try {
+                var today = new Date();
+                var month = today.getMonth() + 1;
+                var day = today.getDate();
+                var dateStr = today.getFullYear() + '-' + 
+                             (month < 10 ? '0' + month : month) + '-' + 
+                             (day < 10 ? '0' + day : day);
+                
+                var gameName = dateStr;
+                var counter = 0;
+                
+                while (gameHistory.some(function(g) { return g.name === gameName; })) {
+                    gameName = dateStr + String.fromCharCode(65 + counter);
+                    counter++;
+                }
+
+                currentGame = {
+                    name: gameName,
+                    date: new Date().toISOString(),
+                    players: JSON.parse(JSON.stringify(players)),
+                    rounds: [],
+                    scores: {}
+                };
+
+                for (var i = 0; i < players.length; i++) {
+                    currentGame.scores[players[i].name] = 0;
+                }
+
+                document.getElementById('gameStatus2').textContent = '牌局: ' + gameName + ' | 副牌数: 0';
+                document.getElementById('mainMenu').style.display = 'none';
+                document.getElementById('mainHeader').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+
+                updateTables();
+                
+            } catch (error) {
+                customAlert('开始牌局时出现错误: ' + error.message);
+            }
+        }
+
+        function endGame() {
+            if (!currentGame) return;
+            if (currentGame.rounds.length === 0) {
+                customConfirm('还没记录任何副牌，确定结束？', function() {
+                    goHome();
+                    currentGame = null;
+                });
+                return;
+            }
+            customConfirm('确定结束并保存牌局？', function() {
+                gameHistory.push(JSON.parse(JSON.stringify(currentGame)));
+                localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                localStorage.removeItem('currentGameInProgress');
+                currentGame = null;
+                goHome();
+                customAlert('牌局已保存！');
+            });
+        }
+
+        function addScore() {
+            if (!currentGame) return;
+
+            editingIndex = -1;
+            currentInputIndex = 0;
+            inputOrder = [];
+            document.getElementById('scoreModalTitle').textContent = '记录分值';
+
+            var select = document.getElementById('winner');
+            select.innerHTML = '<option value="">选择获胜者</option>';
+            for (var i = 0; i < players.length; i++) {
+                select.innerHTML += '<option value="' + players[i].name + '">' + players[i].name + '</option>';
+            }
+
+            updateScoreInputs('');
+            select.onchange = function() { updateScoreInputs(this.value); };
+            
+            document.getElementById('scoreModal').style.display = 'block';
+        }
+
+        function updateScoreInputs(winner) {
+            var div = document.getElementById('scoreInputs');
+            div.innerHTML = '';
+            inputOrder = [];
+            currentInputIndex = 0;
+
+            if (!winner) {
+                div.innerHTML = '<p style="text-align: center; color: #666;">请先选择获胜者</p>';
+                return;
+            }
+
+            var inputIndex = 0;
+            for (var i = 0; i < players.length; i++) {
+                if (players[i].name !== winner) {
+                    var scoreItem = document.createElement('div');
+                    scoreItem.className = 'score-item';
+                    scoreItem.innerHTML = 
+                        '<label>' + players[i].name + '</label>' +
+                        '<input type="number" id="score_' + players[i].name + '" placeholder="0" min="0" inputmode="numeric" data-player="' + players[i].name + '" data-index="' + inputIndex + '">';
+                    
+                    div.appendChild(scoreItem);
+                    inputOrder.push(players[i].name);
+                    inputIndex++;
+                }
+            }
+
+            setTimeout(function() {
+                addInputEventListeners();
+                focusCurrentInput();
+            }, 100);
+        }
+
+        function addInputEventListeners() {
+            for (var i = 0; i < inputOrder.length; i++) {
+                var input = document.getElementById('score_' + inputOrder[i]);
+                if (input) {
+                    input.addEventListener('keydown', handleInputKeydown);
+                    input.addEventListener('focus', handleInputFocus);
+                    input.addEventListener('blur', handleInputBlur);
+                }
+            }
+        }
+
+        function handleInputKeydown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                var currentIndex = parseInt(event.target.getAttribute('data-index'));
+                
+                if (currentIndex < inputOrder.length - 1) {
+                    currentInputIndex = currentIndex + 1;
+                    focusCurrentInput();
+                } else {
+                    saveScore();
+                }
+            }
+        }
+
+        function handleInputFocus(event) {
+            var currentIndex = parseInt(event.target.getAttribute('data-index'));
+            currentInputIndex = currentIndex;
+            updateInputHighlight();
+        }
+
+        function handleInputBlur(event) {
+            var scoreItems = document.querySelectorAll('.score-item');
+            scoreItems.forEach(function(item) {
+                item.classList.remove('current-input');
+            });
+        }
+
+        function focusCurrentInput() {
+            if (currentInputIndex >= 0 && currentInputIndex < inputOrder.length) {
+                var input = document.getElementById('score_' + inputOrder[currentInputIndex]);
+                if (input) {
+                    input.focus();
+                    input.select();
+                    updateInputHighlight();
+                }
+            }
+        }
+
+        function updateInputHighlight() {
+            var scoreItems = document.querySelectorAll('.score-item');
+            scoreItems.forEach(function(item) {
+                item.classList.remove('current-input');
+            });
+
+            if (currentInputIndex >= 0 && currentInputIndex < inputOrder.length) {
+                var currentInput = document.getElementById('score_' + inputOrder[currentInputIndex]);
+                if (currentInput) {
+                    var scoreItem = currentInput.closest('.score-item');
+                    if (scoreItem) {
+                        scoreItem.classList.add('current-input');
+                    }
+                }
+            }
+        }
+
+        function saveScore() {
+            var winner = document.getElementById('winner').value;
+            if (!winner) {
+                customAlert('请选择获胜者！');
+                return;
+            }
+
+            if (editingIndex >= 0) {
+                var oldRound = currentGame.rounds[editingIndex];
+                for (var name in oldRound.scores) {
+                    currentGame.scores[name] -= oldRound.scores[name];
+                }
+            }
+
+            var round = { winner: winner, scores: {} };
+            var total = 0;
+
+            for (var i = 0; i < players.length; i++) {
+                var name = players[i].name;
+                if (name === winner) {
+                    round.scores[name] = 0;
+                } else {
+                    var input = document.getElementById('score_' + name);
+                    var score = parseInt(input.value) || 0;
+                    round.scores[name] = -score;
+                    currentGame.scores[name] -= score;
+                    total += score;
+                }
+            }
+
+            round.scores[winner] = total;
+            currentGame.scores[winner] += total;
+
+            if (editingIndex >= 0) {
+                currentGame.rounds[editingIndex] = round;
+                editingIndex = -1;
+            } else {
+                currentGame.rounds.push(round);
+            }
+
+            document.getElementById('gameStatus2').textContent = '牌局: ' + currentGame.name + ' | 副牌数: ' + currentGame.rounds.length;
+
+            updateTables();
+            closeModal('scoreModal');
+            saveCurrentGameToTemp();
+        }
+
+        function updateTables() {
+            updateGameTable();
+            updateFamilyTable();
+        }
+
+        function updateGameTable() {
+            var body = document.getElementById('gameBody');
+            body.innerHTML = '';
+
+            if (players.length === 0) {
+                body.innerHTML = '<tr><td>请先添加玩家</td></tr>';
+                return;
+            }
+
+            var nameRow = '<tr class="name-row"><td><b>姓名</b></td>';
+            for (var i = 0; i < players.length; i++) {
+                var family = players[i].family ? '<br><small>(' + players[i].family + ')</small>' : '';
+                nameRow += '<td><b>' + players[i].name + family + '</b></td>';
+            }
+            nameRow += '</tr>';
+            body.innerHTML += nameRow;
+
+            var totalRow = '<tr class="total-row"><td><b>合计</b></td>';
+            for (var i = 0; i < players.length; i++) {
+                var score = currentGame ? (currentGame.scores[players[i].name] || 0) : 0;
+                var css = score > 0 ? 'positive' : (score < 0 ? 'negative' : '');
+                totalRow += '<td class="' + css + '"><b>' + score + '</b></td>';
+            }
+            totalRow += '</tr>';
+            body.innerHTML += totalRow;
+
+            if (!currentGame) return;
+
+            for (var r = 0; r < currentGame.rounds.length; r++) {
+                var round = currentGame.rounds[r];
+                var row = '<tr onclick="editRound(' + r + ')" style="cursor: pointer;" title="点击修改"><td>第' + (r + 1) + '副</td>';
+                
+                for (var i = 0; i < players.length; i++) {
+                    var name = players[i].name;
+                    var score = round.scores[name] || 0;
+                    var css = score > 0 ? 'positive winner' : (score < 0 ? 'negative' : '');
+                    row += '<td class="' + css + '">' + (score > 0 ? '+' : '') + score + '</td>';
+                }
+                row += '</tr>';
+                body.innerHTML += row;
+            }
+        }
+
+        function updateFamilyTable() {
+            var families = {};
+            var hasFamilies = false;
+            
+            for (var i = 0; i < players.length; i++) {
+                if (players[i].family) {
+                    hasFamilies = true;
+                    if (!families[players[i].family]) {
+                        families[players[i].family] = [];
+                    }
+                    families[players[i].family].push(players[i].name);
+                }
+            }
+
+            var area = document.getElementById('familyArea');
+            if (!hasFamilies || !currentGame) {
+                area.style.display = 'none';
+                return;
+            }
+
+            area.style.display = 'block';
+            var body = document.getElementById('familyBody');
+            var familyNames = Object.keys(families);
+            body.innerHTML = '';
+
+            var nameRow = '<tr class="name-row"><td><b>家庭</b></td>';
+            for (var i = 0; i < familyNames.length; i++) {
+                var members = families[familyNames[i]].join(', ');
+                nameRow += '<td><b>' + familyNames[i] + '<br><small>(' + members + ')</small></b></td>';
+            }
+            nameRow += '</tr>';
+            body.innerHTML += nameRow;
+
+            var totalRow = '<tr class="total-row"><td><b>合计</b></td>';
+            for (var i = 0; i < familyNames.length; i++) {
+                var familyScore = 0;
+                for (var j = 0; j < families[familyNames[i]].length; j++) {
+                    var playerName = families[familyNames[i]][j];
+                    familyScore += currentGame.scores[playerName] || 0;
+                }
+                var css = familyScore > 0 ? 'positive' : (familyScore < 0 ? 'negative' : '');
+                totalRow += '<td class="' + css + '"><b>' + familyScore + '</b></td>';
+            }
+            totalRow += '</tr>';
+            body.innerHTML += totalRow;
+        }
+
+        function editRound(index) {
+            if (!currentGame || index >= currentGame.rounds.length) return;
+            
+            editingIndex = index;
+            currentInputIndex = 0;
+            inputOrder = [];
+            var round = currentGame.rounds[index];
+            document.getElementById('scoreModalTitle').textContent = '修改第' + (index + 1) + '副牌';
+            
+            var select = document.getElementById('winner');
+            select.innerHTML = '<option value="">选择获胜者</option>';
+            for (var i = 0; i < players.length; i++) {
+                var selected = players[i].name === round.winner ? ' selected' : '';
+                select.innerHTML += '<option value="' + players[i].name + '"' + selected + '>' + players[i].name + '</option>';
+            }
+            
+            updateScoreInputs(round.winner);
+            
+            setTimeout(function() {
+                for (var i = 0; i < players.length; i++) {
+                    var name = players[i].name;
+                    if (name !== round.winner) {
+                        var input = document.getElementById('score_' + name);
+                        if (input) {
+                            input.value = Math.abs(round.scores[name] || 0);
+                        }
+                    }
+                }
+            }, 150);
+            
+            document.getElementById('scoreModal').style.display = 'block';
+        }
+
+        function showPlayers() {
+            updatePlayerList();
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        function addPlayer() {
+            var name = document.getElementById('playerName').value.trim();
+            var family = document.getElementById('playerFamily').value.trim();
+
+            if (!name) {
+                customAlert('请输入姓名！');
+                return;
+            }
+
+            if (players.some(function(p) { return p.name === name; })) {
+                customAlert('玩家已存在！');
+                return;
+            }
+
+            players.push({ name: name, family: family || null });
+            localStorage.setItem('players', JSON.stringify(players));
+
+            document.getElementById('playerName').value = '';
+            document.getElementById('playerFamily').value = '';
+
+            updatePlayerList();
+            if (currentGame) {
+                currentGame.scores[name] = 0;
+                updateTables();
+            }
+        }
+
+        function removePlayer(name) {
+            if (currentGame && currentGame.rounds.length > 0) {
+                customAlert('牌局进行中不能删除玩家！');
+                return;
+            }
+
+            playerToDelete = name;
+            document.getElementById('confirmModalTitle').textContent = '确认删除玩家';
+            document.getElementById('confirmMessage').textContent = '确定要删除玩家 "' + name + '" 吗？';
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function deleteGameRecord(index) {
+            if (index < 0 || index >= gameHistory.length) return;
+            
+            gameToDelete = index;
+            var game = gameHistory[index];
+            document.getElementById('confirmModalTitle').textContent = '确认删除牌局';
+            document.getElementById('confirmMessage').textContent = '确定要删除牌局 "' + game.name + '" 吗？\n\n此操作不可撤销！';
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function confirmAction() {
+            if (playerToDelete) {
+                players = players.filter(function(p) { 
+                    return p.name !== playerToDelete; 
+                });
+                
+                localStorage.setItem('players', JSON.stringify(players));
+                updatePlayerList();
+                
+                if (currentGame) {
+                    delete currentGame.scores[playerToDelete];
+                    updateTables();
+                }
+                
+                playerToDelete = null;
+            } else if (gameToDelete !== null) {
+                gameHistory.splice(gameToDelete, 1);
+                localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                gameToDelete = null;
+                customAlert('牌局记录已删除！');
+                showHistory();
+            }
+            
+            closeModal('confirmModal');
+        }
+
+        function updatePlayerList() {
+            var list = document.getElementById('playerList');
+            list.innerHTML = '';
+
+            if (players.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #666;">暂无玩家</div>';
+                return;
+            }
+
+            for (var i = 0; i < players.length; i++) {
+                var player = players[i];
+                var familyText = player.family ? ' (' + player.family + ')' : '';
+                
+                var playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                
+                var playerSpan = document.createElement('span');
+                playerSpan.textContent = player.name + familyText;
+                
+                var deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '×';
+                deleteBtn.title = '删除 ' + player.name;
+                deleteBtn.onclick = function(name) {
+                    return function() {
+                        removePlayer(name);
+                    };
+                }(player.name);
+                
+                playerCard.appendChild(playerSpan);
+                playerCard.appendChild(deleteBtn);
+                list.appendChild(playerCard);
+            }
+        }
+
+        function showHistory() {
+            var listDiv = document.getElementById('historyList');
+            listDiv.innerHTML = '';
+
+            if (gameHistory.length === 0) {
+                listDiv.innerHTML = '<p style="text-align: center; color: #666;">暂无历史记录</p>';
+            } else {
+                for (var i = gameHistory.length - 1; i >= 0; i--) {
+                    var game = gameHistory[i];
+                    
+                    var families = {};
+                    for (var j = 0; j < game.players.length; j++) {
+                        var p = game.players[j];
+                        if (p.family) {
+                            if (!families[p.family]) families[p.family] = 0;
+                            families[p.family] += game.scores[p.name] || 0;
+                        }
+                    }
+                    
+                    var summary = Object.keys(families).map(function(f) { 
+                        return f + ': ' + families[f]; 
+                    }).join(' | ');
+                    
+                    var div = document.createElement('div');
+                    div.style.marginBottom = '10px';
+                    div.style.padding = '8px';
+                    div.style.border = '1px solid #ddd';
+                    div.style.borderRadius = '5px';
+                    div.innerHTML = 
+                        '<b>' + game.name + '</b><br>' +
+                        (summary || '无家庭数据') +
+                        '<br><button class="btn btn-blue" style="margin-top:5px;" onclick="showGameDetail(' + i + ')">详情</button>';
+                    
+                    listDiv.appendChild(div);
+                }
+            }
+
+            var currentYear = new Date().getFullYear();
+            var tempBackupDiv = document.createElement('div');
+            tempBackupDiv.className = 'temp-backup-area';
+            tempBackupDiv.innerHTML = 
+                '<h4 style="margin-top: 0; text-align: center; color: #28a745;">数据备份</h4>' +
+                '<div class="detail-buttons">' +
+                '<button class="btn btn-green" onclick="createTempBackup()">备份当年数据</button>' +
+                '<button class="btn btn-orange" onclick="restoreTempBackup()">恢复备份数据</button>' +
+                '</div>' +
+                '<p style="font-size: 12px; color: #666; text-align: center; margin: 10px 0 0 0;">' +
+                '临时备份仅保存 ' + currentYear + ' 年数据，不删除原始记录' +
+                '</p>';
+            
+            listDiv.appendChild(tempBackupDiv);
+
+            document.getElementById('historyModal').style.display = 'block';
+        }
+
+        function showGameDetail(index) {
+            var game = gameHistory[index];
+            var html = '<h4>牌局: ' + game.name + '</h4>';
+            
+            html += '<table class="score-table"><tr class="name-row"><td>副数</td>';
+            for (var i = 0; i < game.players.length; i++) {
+                html += '<td><b>' + game.players[i].name + '</b></td>';
+            }
+            html += '</tr>';
+            
+            var totalRow = '<tr class="total-row"><td><b>合计</b></td>';
+            for (var i = 0; i < game.players.length; i++) {
+                var name = game.players[i].name;
+                var score = game.scores[name] || 0;
+                var css = score > 0 ? 'positive' : (score < 0 ? 'negative' : '');
+                totalRow += '<td class="' + css + '"><b>' + score + '</b></td>';
+            }
+            totalRow += '</tr>';
+            html += totalRow;
+            
+            for (var r = 0; r < game.rounds.length; r++) {
+                var round = game.rounds[r];
+                html += '<tr><td>第' + (r + 1) + '副</td>';
+                for (var i = 0; i < game.players.length; i++) {
+                    var name = game.players[i].name;
+                    var score = round.scores[name] || 0;
+                    var css = score > 0 ? 'positive winner' : (score < 0 ? 'negative' : '');
+                    html += '<td class="' + css + '">' + (score > 0 ? '+' : '') + score + '</td>';
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            
+            html += '<div class="detail-buttons">' +
+                    '<button class="btn btn-gray" onclick="showHistory()">返回列表</button>' +
+                    '<button class="btn btn-red" onclick="deleteGameRecord(' + index + ')">删除记录</button>' +
+                    '</div>';
+            
+            var listDiv = document.getElementById('historyList');
+            listDiv.innerHTML = html;
+        }
+
+        function showDataBackup() {
+            document.getElementById('dataBackupModal').style.display = 'block';
+        }
+
+        function exportYearlyData() {
+            closeModal('dataBackupModal');
+            
+            if (gameHistory.length === 0) {
+                customAlert('暂无历史记录可备份！');
+                return;
+            }
+            
+            var yearData = {};
+            for (var i = 0; i < gameHistory.length; i++) {
+                var game = gameHistory[i];
+                var year = new Date(game.date).getFullYear();
+                if (!yearData[year]) {
+                    yearData[year] = [];
+                }
+                yearData[year].push(game);
+            }
+            
+            var currentYear = new Date().getFullYear();
+            var availableYears = [];
+            
+            for (var year in yearData) {
+                if (parseInt(year) < currentYear) {
+                    availableYears.push(year);
+                }
+            }
+            
+            availableYears.sort(function(a, b) { return b - a; });
+            
+            if (availableYears.length === 0) {
+                customAlert('暂无可备份的往年数据，当年数据请等年底再备份。');
+                return;
+            }
+            
+            var yearChoice = '请选择要备份的年度：\n\n';
+            for (var i = 0; i < availableYears.length; i++) {
+                var year = availableYears[i];
+                var count = yearData[year].length;
+                yearChoice += (i + 1) + '. ' + year + '年 (' + count + '场游戏)\n';
+            }
+            
+            customPrompt(yearChoice + '\n请输入数字选择：', '', function(choice) {
+                if (!choice) return;
+                
+                var selectedIndex = parseInt(choice) - 1;
+                if (selectedIndex < 0 || selectedIndex >= availableYears.length) {
+                    customAlert('选择无效！');
+                    return;
+                }
+                
+                var selectedYear = availableYears[selectedIndex];
+                var yearGames = yearData[selectedYear];
+                
+                var backupDate = new Date().toISOString().slice(0, 10);
+                var backupFileName = selectedYear + '年度备份_' + backupDate + '.json';
+                
+                customConfirm('确认备份 ' + selectedYear + ' 年的 ' + yearGames.length + ' 场游戏吗？\n\n' +
+                           '文件名：' + backupFileName + '\n' +
+                           '保存位置：浏览器下载文件夹\n\n' +
+                           '备份后将从历史记录中清空该年度数据！\n此操作不可撤销！', function() {
+                    var backupData = {
+                        backupType: 'yearly',
+                        year: parseInt(selectedYear),
+                        backupDate: new Date().toISOString(),
+                        gameCount: yearGames.length,
+                        games: yearGames,
+                        version: '1.0',
+                        app: 'Just Staring'
+                    };
+                    
+                    var dataStr = JSON.stringify(backupData, null, 2);
+                    var dataBlob = new Blob([dataStr], {type: 'application/json;charset=utf-8'});
+                    var link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = backupFileName;
+                    link.click();
+                    
+                    gameHistory = gameHistory.filter(function(g) {
+                        return new Date(g.date).getFullYear() !== parseInt(selectedYear);
+                    });
+                    
+                    localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                    
+                    customAlert(selectedYear + ' 年度数据备份成功！\n\n' +
+                         '文件名：' + backupFileName + '\n' +
+                         '保存位置：浏览器下载文件夹\n' +
+                         '已从历史记录中清空 ' + yearGames.length + ' 场游戏。\n\n' +
+                         '请妥善保存备份文件，删除的数据只能通过导入备份文件恢复。');
+                });
+            });
+        }
+
+        function importYearlyData() {
+            closeModal('dataBackupModal');
+            
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.style.display = 'none';
+            
+            input.onchange = function(event) {
+                var file = event.target.files[0];
+                if (!file) return;
+                
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        var backupData = JSON.parse(e.target.result);
+                        
+                        if (!backupData.backupType || backupData.backupType !== 'yearly') {
+                            throw new Error('不是有效的年度备份文件');
+                        }
+                        
+                        if (!backupData.year || !backupData.games) {
+                            throw new Error('备份文件数据不完整');
+                        }
+                        
+                        var existingYearGames = gameHistory.filter(function(g) {
+                            return new Date(g.date).getFullYear() === backupData.year;
+                        });
+                        
+                        var confirmMsg = '确认导入 ' + backupData.year + ' 年度备份吗？\n\n' +
+                                       '将导入 ' + backupData.games.length + ' 场游戏\n' +
+                                       '备份时间：' + new Date(backupData.backupDate).toLocaleString();
+                        
+                        if (existingYearGames.length > 0) {
+                            confirmMsg += '\n\n注意：当前历史中已有 ' + existingYearGames.length + 
+                                         ' 场 ' + backupData.year + ' 年的游戏，导入后将合并显示。';
+                        }
+                        
+                        customConfirm(confirmMsg, function() {
+                            for (var i = 0; i < backupData.games.length; i++) {
+                                gameHistory.push(backupData.games[i]);
+                            }
+                            
+                            gameHistory.sort(function(a, b) {
+                                return new Date(a.date) - new Date(b.date);
+                            });
+                            
+                            localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                            
+                            customAlert('成功导入 ' + backupData.year + ' 年度备份！\n共 ' + backupData.games.length + ' 场游戏已加入历史记录。');
+                        });
+                        
+                    } catch (error) {
+                        customAlert('导入失败：' + error.message + '\n\n请确保选择的是正确的年度备份文件。');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        }
+
+        function createTempBackup() {
+            var currentYear = new Date().getFullYear();
+            var lastYear = currentYear - 1;
+            
+            var lastYearGames = gameHistory.filter(function(g) {
+                return new Date(g.date).getFullYear() === lastYear;
+            });
+            
+            if (lastYearGames.length > 0) {
+                customConfirm('发现 ' + lastYear + ' 年有 ' + lastYearGames.length + ' 场游戏记录\n\n建议先进行年度备份清理空间，是否现在进行年度备份？\n\n点击"确定"进行年度备份，点击"取消"继续临时备份', function() {
+                    closeModal('historyModal');
+                    showDataBackup();
+                }, function() {
+                    performTempBackup();
+                });
+                return;
+            }
+            
+            performTempBackup();
+        }
+
+        function performTempBackup() {
+            var currentYear = new Date().getFullYear();
+            
+            var currentYearGames = gameHistory.filter(function(g) {
+                return new Date(g.date).getFullYear() === currentYear;
+            });
+            
+            if (currentYearGames.length === 0) {
+                customAlert('当前没有 ' + currentYear + ' 年的游戏记录可以备份！');
+                return;
+            }
+            
+            var backupDate = new Date().toISOString().slice(0, 10);
+            var backupFileName = '临时备份_' + currentYear + '年_' + backupDate + '.json';
+            
+            var tempBackupData = {
+                backupType: 'temporary',
+                year: currentYear,
+                backupDate: new Date().toISOString(),
+                gameCount: currentYearGames.length,
+                playerCount: players.length,
+                data: {
+                    players: players,
+                    games: currentYearGames
+                },
+                version: '1.0',
+                app: 'Just Staring'
+            };
+            
+            var tempBackupKey = 'tempBackup_' + currentYear;
+            localStorage.setItem(tempBackupKey, JSON.stringify(tempBackupData));
+            
+            var dataStr = JSON.stringify(tempBackupData, null, 2);
+            var dataBlob = new Blob([dataStr], {type: 'application/json;charset=utf-8'});
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = backupFileName;
+            link.click();
+            
+            customAlert('临时备份成功！\n\n文件名：' + backupFileName + '\n保存位置：浏览器下载文件夹\n\n已备份 ' + currentYearGames.length + ' 场 ' + currentYear + ' 年游戏记录和 ' + players.length + ' 个玩家信息。\n\n备份数据同时保存在应用内，可直接使用"恢复备份数据"功能。');
+        }
+
+        function restoreTempBackup() {
+            var currentYear = new Date().getFullYear();
+            var tempBackupKey = 'tempBackup_' + currentYear;
+            var storedBackup = localStorage.getItem(tempBackupKey);
+            
+            if (!storedBackup) {
+                var input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.style.display = 'none';
+                
+                input.onchange = function(event) {
+                    var file = event.target.files[0];
+                    if (!file) return;
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            var backupData = JSON.parse(e.target.result);
+                            
+                            if (!backupData.backupType || backupData.backupType !== 'temporary') {
+                                throw new Error('不是有效的临时备份文件');
+                            }
+                            
+                            restoreFromBackupData(backupData);
+                            
+                        } catch (error) {
+                            customAlert('恢复失败：' + error.message + '\n\n请确保选择的是正确的临时备份文件。');
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                };
+                
+                customConfirm('没有找到应用内的临时备份数据。\n\n是否要从备份文件恢复？', function() {
+                    document.body.appendChild(input);
+                    input.click();
+                    document.body.removeChild(input);
+                });
+                return;
+            }
+            
+            try {
+                var backupData = JSON.parse(storedBackup);
+                restoreFromBackupData(backupData);
+            } catch (error) {
+                customAlert('恢复失败：备份数据已损坏。');
+            }
+        }
+
+        function restoreFromBackupData(backupData) {
+            var backupDate = new Date(backupData.backupDate).toLocaleString();
+            var confirmMsg = '确认恢复临时备份吗？\n\n' +
+                           '备份时间：' + backupDate + '\n' +
+                           '备份年份：' + backupData.year + ' 年\n' +
+                           '游戏记录：' + backupData.gameCount + ' 场\n' +
+                           '玩家信息：' + backupData.playerCount + ' 个\n\n' +
+                           '注意：这将覆盖当前的玩家信息和 ' + backupData.year + ' 年的游戏记录！';
+            
+            customConfirm(confirmMsg, function() {
+                players = backupData.data.players || [];
+                localStorage.setItem('players', JSON.stringify(players));
+                
+                gameHistory = gameHistory.filter(function(g) {
+                    return new Date(g.date).getFullYear() !== backupData.year;
+                });
+                
+                for (var i = 0; i < backupData.data.games.length; i++) {
+                    gameHistory.push(backupData.data.games[i]);
+                }
+                
+                gameHistory.sort(function(a, b) {
+                    return new Date(a.date) - new Date(b.date);
+                });
+                
+                localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                
+                customAlert('临时备份恢复成功！\n\n已恢复 ' + backupData.gameCount + ' 场 ' + backupData.year + ' 年游戏记录和 ' + backupData.playerCount + ' 个玩家信息。');
+                
+                showHistory();
+                updatePlayerList();
+            });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            if (id === 'scoreModal') {
+                editingIndex = -1;
+                currentInputIndex = 0;
+                inputOrder = [];
+            }
+            if (id === 'confirmModal') {
+                playerToDelete = null;
+                gameToDelete = null;
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.onload = function() {
+            preventViewportBounce();
+            
+            // 检查是否有未完成的牌局需要恢复
+            var saved = localStorage.getItem('currentGameInProgress');
+            if (saved) {
+                try {
+                    var tempGame = JSON.parse(saved);
+                    if (tempGame && tempGame.rounds && tempGame.rounds.length > 0) {
+                        customConfirm('检测到上次未完成的牌局，是否继续？\n\n牌局: ' + tempGame.name + '\n副牌数: ' + tempGame.rounds.length, function() {
+                            currentGame = tempGame;
+                            document.getElementById('mainMenu').style.display = 'none';
+                            document.getElementById('mainHeader').style.display = 'none';
+                            document.getElementById('gameArea').style.display = 'block';
+                            document.getElementById('gameStatus2').textContent = '牌局: ' + currentGame.name + ' | 副牌数: ' + currentGame.rounds.length;
+                            updateTables();
+                        }, function() {
+                            localStorage.removeItem('currentGameInProgress');
+                            goHome();
+                        });
+                        updatePlayerList();
+                        return;
+                    }
+                } catch (e) {
+                    localStorage.removeItem('currentGameInProgress');
+                }
+            }
+            
+            goHome();
+            updatePlayerList();
+        };
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+                if (event.target.id === 'scoreModal') {
+                    editingIndex = -1;
+                    currentInputIndex = 0;
+                    inputOrder = [];
+                }
+                if (event.target.id === 'confirmModal') {
+                    playerToDelete = null;
+                    gameToDelete = null;
+                }
+            }
+        };
+    </script>
+</body>
+</html>
+            
